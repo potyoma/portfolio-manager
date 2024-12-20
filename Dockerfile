@@ -4,6 +4,8 @@ FROM --platform=linux/amd64 node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
+ENV NEXT_TELEMETRY_DISABLED 1
+
 # Install dependencies based on the preferred package manager
 
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml\* ./
@@ -17,16 +19,14 @@ RUN \
 
 ##### BUILDER
 
+RUN pnpm run db:migrate
+
 FROM --platform=linux/amd64 node:20-alpine AS builder
 ARG DATABASE_URL
 ARG NEXT_PUBLIC_CLIENTVAR
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN pnpm run db:migrate
 
 RUN \
     if [ -f yarn.lock ]; then SKIP_ENV_VALIDATION=1 yarn build; \
