@@ -19,8 +19,6 @@ RUN \
 
 ##### BUILDER
 
-RUN pnpm run db:migrate
-
 FROM --platform=linux/amd64 node:20-alpine AS builder
 ARG DATABASE_URL
 ARG NEXT_PUBLIC_CLIENTVAR
@@ -42,7 +40,9 @@ WORKDIR /app
 
 ENV NODE_ENV production
 
-# ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN pnpm run db:migrate
 
 COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public
