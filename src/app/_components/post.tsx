@@ -1,20 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, type FormEvent } from "react";
 
 import { api } from "~/trpc/react";
 
 export function LatestPost() {
+  const formRef = useRef<HTMLFormElement>(null);
   const [latestPost] = api.post.getLatest.useSuspenseQuery();
 
   const utils = api.useUtils();
-  const [name, setName] = useState("");
   const createPost = api.post.create.useMutation({
     onSuccess: async () => {
       await utils.post.invalidate();
-      setName("");
+      formRef.current?.reset();
     },
   });
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const name = formData.get("name") as string;
+    createPost.mutate({ name });
+  };
 
   return (
     <div className="w-full max-w-xs">
@@ -24,17 +31,14 @@ export function LatestPost() {
         <p>You have no posts yet.</p>
       )}
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          createPost.mutate({ name });
-        }}
+        ref={formRef}
+        onSubmit={handleSubmit}
         className="flex flex-col gap-2"
       >
         <input
           type="text"
+          name="name"
           placeholder="Title"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
           className="w-full rounded-full px-4 py-2 text-black"
         />
         <button
